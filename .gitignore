@@ -1,0 +1,40 @@
+# ANSYS heavy/project files
+*.wbpj
+*.mechdb
+*.rst
+*.rth
+*.err
+*.out
+*.log
+*.lock
+*.agdb
+*.dsdb
+*.esav
+*.full
+*.emat
+*.db
+*.mntr
+*.stat
+
+# ANSYS generated folders
+dp*/
+*_files/
+SYS*/
+user_files/
+solve.out
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Large archives
+*.zip
+*.7z
+*.rar
