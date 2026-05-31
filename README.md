@@ -46,4 +46,19 @@ The model is a simplified stainless-steel support plate with:
 
 ## Status
 
-Project setup started.
+LC1 setup, solution evidence, mesh convergence notes and Python post-processing are in place. LC2-LC4 remain planned follow-on cases.
+
+Current portfolio artifacts:
+- Geometry notes: `geometry/geometry_notes.md`
+- Assumptions and limitations: `docs/assumptions_and_limitations.md`
+- LC1 mesh convergence notes: `docs/lc1_mesh_convergence_notes.md`
+- Raw exported LC1 convergence data: `ansys/exported_results/mesh_convergence_raw.csv`
+- Python post-processing: `scripts/postprocess_mesh_convergence.py`
+- Generated LC1 summary outputs: `results/`
+- Draft verification report: `report/lc1_verification_report.md`
+
+To regenerate the LC1 post-processing outputs:
+
+```bash
+python scripts/postprocess_mesh_convergence.py
+```
