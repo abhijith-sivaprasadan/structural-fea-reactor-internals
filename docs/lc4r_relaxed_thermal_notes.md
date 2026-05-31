@@ -25,6 +25,16 @@ The intended support logic is:
 
 Rotations are left free to avoid artificial bending restraint.
 
+For the final solved ANSYS session, the practical global-coordinate implementation was:
+
+| Remote support | Final implementation |
+|---|---|
+| RD1 at approximately `(70, -40, 7)` mm | UX = 0, UY = 0, UZ = 0; RX = RY = RZ = Free |
+| RD2 at approximately `(70, 40, 7)` mm | UX = 0, UY = Free, UZ = 0; RX = RY = RZ = Free |
+| RD3 at approximately `(-70, 40, 7)` mm | UX = Free, UY = Free, UZ = 0; RX = RY = RZ = Free |
+
+This is the same 3-2-1 intent mapped onto the actual hole layout and global axis directions used in the final ANSYS session.
+
 ## Fine Mesh Results
 
 | Quantity | LC4R result |
@@ -42,6 +52,23 @@ Rotations are left free to avoid artificial bending restraint.
 ANSYS reported a caution that not enough constraints may be applied to prevent rigid-body motion. For this case, that warning is acceptable if there is no solver pivot warning, no missing result file, and results display normally. The model is intentionally lightly constrained so the part can thermally expand without artificial restraint.
 
 ANSYS also reported that one or more remote boundary conditions are scoped to many elements. This is interpreted as a performance warning rather than a physics failure because the model solved and the remote reaction totals remain very small.
+
+Rejected warning states:
+
+- Solver pivot warning
+- Result file not found
+- Remote attachment missing or disconnected
+
+Those warning states are not carried forward into the accepted LC4R result.
+
+Clean-solve checks used:
+
+1. Clear generated solution data.
+2. Confirm each remote point is attached to the intended mounting-hole region.
+3. Confirm rotations remain free.
+4. Solve.
+5. Accept only if the deformed shape and stress field display normally.
+6. Confirm remote reaction totals remain below 1 N.
 
 ## Interpretation
 
