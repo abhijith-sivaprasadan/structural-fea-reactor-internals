@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_CSV = ROOT / "ansys" / "exported_results" / "mesh_convergence_raw.csv"
+LOAD_CASE_SUMMARY_CSV = ROOT / "ansys" / "exported_results" / "load_case_summary.csv"
 RESULTS_DIR = ROOT / "results"
 
 
@@ -114,6 +115,73 @@ def save_combined_plot(summary: pd.DataFrame, output_path: Path) -> None:
     plt.close(fig)
 
 
+def save_load_case_outputs() -> None:
+    if not LOAD_CASE_SUMMARY_CSV.exists():
+        return
+
+    summary = pd.read_csv(LOAD_CASE_SUMMARY_CSV)
+    summary.to_markdown(
+        RESULTS_DIR / "load_case_summary.md",
+        index=False,
+        floatfmt=".6g",
+    )
+
+    lc1 = summary.loc[summary["load_case"] == "LC1"].iloc[0]
+    checks = []
+    linear_scale_cases = summary.loc[
+        (summary["load_case"] != "LC1")
+        & (summary["force_y_n"] == lc1["force_y_n"])
+        & (summary["force_z_n"] == lc1["force_z_n"])
+    ]
+    for _, row in linear_scale_cases.iterrows():
+        scale_factor = row["force_x_n"] / lc1["force_x_n"]
+        for source, label in [
+            ("max_def_mm", "Max deformation [mm]"),
+            ("max_vm_mpa", "Max von Mises stress [MPa]"),
+            ("max_principal_mpa", "Max principal stress [MPa]"),
+            ("reaction_total_n", "Reaction force resultant [N]"),
+        ]:
+            expected = lc1[source] * scale_factor
+            checks.append(
+                {
+                    "load_case": row["load_case"],
+                    "quantity": label,
+                    "lc1_value": lc1[source],
+                    "scale_factor": scale_factor,
+                    "expected_value": expected,
+                    "actual_value": row[source],
+                    "difference_pct": (row[source] - expected) / expected * 100.0,
+                }
+            )
+
+    scaling = pd.DataFrame(checks)
+    if not scaling.empty:
+        scaling.to_csv(RESULTS_DIR / "lc2_linear_scaling_check.csv", index=False)
+        scaling.to_markdown(
+            RESULTS_DIR / "lc2_linear_scaling_check.md",
+            index=False,
+            floatfmt=".6g",
+        )
+
+    force_balance = summary.copy()
+    force_balance["expected_reaction_total_n"] = (
+        force_balance["force_x_n"] ** 2
+        + force_balance["force_y_n"] ** 2
+        + force_balance["force_z_n"] ** 2
+    ) ** 0.5
+    force_balance["reaction_total_error_pct"] = (
+        (force_balance["reaction_total_n"] - force_balance["expected_reaction_total_n"])
+        / force_balance["expected_reaction_total_n"]
+        * 100.0
+    )
+    force_balance.to_csv(RESULTS_DIR / "load_case_force_balance.csv", index=False)
+    force_balance.to_markdown(
+        RESULTS_DIR / "load_case_force_balance.md",
+        index=False,
+        floatfmt=".6g",
+    )
+
+
 def main() -> None:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -142,8 +210,9 @@ def main() -> None:
         RESULTS_DIR / "lc1_principal_stress_convergence.png",
     )
     save_combined_plot(summary, RESULTS_DIR / "lc1_normalized_convergence.png")
+    save_load_case_outputs()
 
-    print(f"Wrote LC1 mesh convergence outputs to {RESULTS_DIR}")
+    print(f"Wrote LC1 mesh convergence and load-case outputs to {RESULTS_DIR}")
 
 
 if __name__ == "__main__":
