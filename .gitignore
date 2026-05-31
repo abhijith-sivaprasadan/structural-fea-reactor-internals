@@ -1,40 +1,53 @@
-# ANSYS heavy/project files
+# -------------------------------
+# ANSYS Workbench / Mechanical
+# -------------------------------
+
+# Workbench project files
 *.wbpj
+
+# Workbench generated project data folders
+*_files/
+*_files.backup/
+.*_files.backup/
+
+# Mechanical / solver databases and result files
 *.mechdb
 *.rst
 *.rth
+*.rmg
+*.emat
+*.esav
+*.full
+*.mode
+*.mntr
 *.err
 *.out
 *.log
-*.lock
+
+# ANSYS geometry/session/temp files
 *.agdb
-*.dsdb
-*.esav
-*.full
-*.emat
-*.db
-*.mntr
-*.stat
+*.avz
+*.wbdb
+*.bak
+*.tmp
+*.lock
 
-# ANSYS generated folders
+# Workbench design-point/system folders if created
 dp*/
-*_files/
 SYS*/
+MECH*/
 user_files/
-solve.out
 
-# Python
-.venv/
+# -------------------------------
+# Keep useful portfolio evidence
+# -------------------------------
+!ansys/screenshots/
+!ansys/screenshots/**
+!ansys/exported_results/
+!ansys/exported_results/**
+
+# -------------------------------
+# Python generated files
+# -------------------------------
 __pycache__/
 *.pyc
-
-# OS/editor
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Large archives
-*.zip
-*.7z
-*.rar
