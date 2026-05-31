@@ -49,6 +49,35 @@ The final frozen load cases are:
 
 LC1-LC3 use fixed support on the mounting-hole cylindrical faces. LC4 intentionally keeps that fixed-hole support for a conservative over-constraint sensitivity comparison. LC4R replaces fixed-hole support with a 3-2-1 locating/sliding remote-displacement approach to allow thermal expansion while preventing rigid-body motion.
 
+The final LC4R global-coordinate implementation used:
+
+| Remote support | Translation constraints | Rotations |
+|---|---|---|
+| RD1 locating support | UX = 0, UY = 0, UZ = 0 | Free |
+| RD2 sliding support | UX = 0, UY = Free, UZ = 0 | Free |
+| RD3 plane support | UX = Free, UY = Free, UZ = 0 | Free |
+
+This implementation preserves the 3-2-1 locating intent while matching the actual mounting-hole layout and global axis directions used in the final solved ANSYS model.
+
+## ANSYS Mechanical Settings
+
+| Item | Final setting |
+|---|---|
+| Analysis type | Static Structural |
+| Units | mm, N, MPa, C |
+| Material | Stainless steel 316, annealed, ANSYS GRANTA sample data |
+| Thermal load | Body-scoped temperature load, +100 C delta |
+| LC1 load | 2000 N on central bore inner face |
+| LC2 load | 5000 N on central bore inner face |
+| LC3 load | `[3000, 2000, 0]` N on central bore inner face |
+| LC4 support | Fixed mounting-hole cylindrical faces |
+| LC4R support | Remote Displacement, deformable behavior |
+| LC4R rotations | RX = RY = RZ = Free at all three remote points |
+| Mesh method | Patch-conforming tetrahedral |
+| Working mesh | Fine mesh, 3 mm global size with local face refinement |
+
+LC4R retained only two non-fatal warnings: low-constraint stiffness and remote boundary conditions scoped to many elements. These were accepted because the case is intentionally lightly constrained, results displayed normally, no pivot or missing-result-file warning remained, and remote reactions were negligible.
+
 ## Mesh Strategy
 
 The mesh uses patch-conforming tetrahedral elements. Mesh controls were refined around the central bore, mounting-hole regions, counterbores, ribs and fillets. The fine mesh selected for final load-case reporting contains:
@@ -126,6 +155,8 @@ LC4R used a 3-2-1 support approach to allow in-plane thermal expansion. The resu
 
 The thermal-expansion case was intentionally modelled with minimal kinematic constraints to allow free expansion. Solver warnings related to low constraint stiffness were reviewed, and reactions were confirmed to be negligible.
 
+Rejected thermal-solve states included solver pivot warnings, missing result files, and disconnected remote attachments. Those states were resolved before freezing the final LC4R result.
+
 ## Boundary-Condition Sensitivity
 
 | Case | Boundary condition | Result behavior | Interpretation |
@@ -187,3 +218,14 @@ Key files:
 - Design recommendations: `../docs/design_recommendations.md`
 - Final figures: `../ansys/exported_results/final_figures/`
 - Detailed verification note: `../report/lc1_lc2_lc3_lc4_lc4r_verification_report.md`
+
+## Figure Plan
+
+| Figure | Source |
+|---|---|
+| Geometry overview | `../ansys/screenshots/02_geometry_improved_isometric.png` |
+| Fine mesh | `../ansys/exported_results/final_figures/final_fine_mesh.png` |
+| LC1 convergence | `../results/lc1_normalized_convergence.png` |
+| LC3 reaction check | `../ansys/exported_results/final_figures/LC3_reaction_force.png` |
+| LC4 over-constrained thermal stress | `../ansys/exported_results/final_figures/LC4_overconstrained_equivalent_stress.png` |
+| LC4R realistic thermal expansion | `../ansys/exported_results/final_figures/LC4R_total_deformation.png` and `../ansys/exported_results/final_figures/LC4R_equivalent_stress.png` |
