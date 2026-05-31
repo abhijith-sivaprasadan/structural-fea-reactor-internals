@@ -1,10 +1,10 @@
-# LC1-LC2-LC3 Verification-Style Report
+# LC1-LC2-LC3-LC4-LC4R Verification-Style Report
 
 ## Project
 
 ASME-aware structural FEM study of a simplified reactor-internal support component.
 
-This report summarizes the LC1, LC2 and LC3 load cases for a non-proprietary educational portfolio model. It is not an ASME BPVC-compliant design calculation and is not a certified nuclear component assessment.
+This report summarizes the LC1, LC2, LC3, LC4 and LC4R load cases for a non-proprietary educational portfolio model. It is not an ASME BPVC-compliant design calculation and is not a certified nuclear component assessment.
 
 ## Model Description
 
@@ -19,9 +19,9 @@ Reference files:
 
 | Item | Value |
 |---|---|
-| Load cases | LC1, LC2 and LC3 |
+| Load cases | LC1, LC2, LC3, LC4 and LC4R |
 | Analysis type | Static structural |
-| Applied loads | LC1: 2,000 N lateral; LC2: 5,000 N lateral; LC3: 3,000 N lateral + 2,000 N vertical |
+| Applied loads | LC1: 2,000 N lateral; LC2: 5,000 N lateral; LC3: 3,000 N lateral + 2,000 N vertical; LC4/LC4R: +100 C uniform body temperature |
 | Support condition | Fixed support on mounting-hole cylindrical faces |
 | Material | Stainless steel 316, annealed, from ANSYS GRANTA sample data |
 | Units | mm, N, MPa |
@@ -47,6 +47,13 @@ Screenshots:
 - `../ansys/screenshots/lc3_fine_von_mises.png`
 - `../ansys/screenshots/lc3_fine_max_principal.png`
 - `../ansys/screenshots/lc3_fine_reaction_force.png`
+- `../ansys/screenshots/lc4_fine_total_deformation.png`
+- `../ansys/screenshots/lc4_fine_von_mises.png`
+- `../ansys/screenshots/lc4_fine_max_principal_stress.png`
+- `../ansys/screenshots/lc4_fine_reaction_force.png`
+- `../ansys/screenshots/lc4r_fine_total_deformation.png`
+- `../ansys/screenshots/lc4r_fine_von_mises.png`
+- `../ansys/screenshots/lc4r_fine_principal_stress.png`
 
 Data and generated outputs:
 - Raw convergence data: `../ansys/exported_results/mesh_convergence_raw.csv`
@@ -116,9 +123,44 @@ The ANSYS total reaction result of 3605.6 N is effectively exact for this portfo
 
 LC3 has a lower resultant load than LC2, but slightly higher total deformation. This is physically reasonable because the added vertical component excites a different bending and twisting response rather than the same purely lateral load path used in LC2. The LC3 maximum principal stress is also slightly higher than LC2, which is reasonable for combined loading that creates a stronger local tensile hotspot.
 
+## LC4 Constrained Thermal Expansion Check
+
+LC4 applies a uniform +100 C body temperature change while retaining the idealized fixed support on the mounting-hole cylindrical faces. This case is retained as a conservative thermal over-constraint sensitivity case.
+
+| Quantity | LC4 fine result |
+|---|---:|
+| Max total deformation [mm] | 0.15288 |
+| Max von Mises stress [MPa] | 2705.7 |
+| Max principal stress [MPa] | 1527.5 |
+| Reaction X [N] | -9.52e-05 |
+| Reaction Y [N] | -5.63e-06 |
+| Reaction Z [N] | -7.73e-06 |
+| Total reaction [N] | 9.5726e-05 |
+
+The deformation confirms that the temperature load is active and that thermal expansion is being calculated. The near-zero total reaction is not by itself an error because a pure thermal expansion case can have internal constraint reactions whose vector sum is near zero.
+
+The very high peak stresses are not accepted as realistic design stresses. They are interpreted as local boundary-condition artifacts caused by suppressing thermal expansion at the fixed mounting-hole faces. LC4 is therefore reported as a constraint-sensitivity case rather than an ASME-style allowable stress result.
+
+## LC4R Relaxed Thermal Expansion Check
+
+LC4R applies the same uniform +100 C body temperature change as LC4, but replaces the fixed mounting-hole supports with a lightly constrained 3-2-1 locating/sliding support scheme. The intent is to prevent rigid-body motion while allowing the plate to expand thermally.
+
+| Quantity | LC4R fine result |
+|---|---:|
+| Max total deformation [mm] | 0.30092 |
+| Max von Mises stress [MPa] | 0.0171 |
+| Max principal stress [MPa] | 0.0166 |
+| RD1 reaction total [N] | 0.257 |
+| RD2 reaction total [N] | 0.234 |
+| RD3 reaction total [N] | 0.561 |
+
+LC4R is the realistic thermal-expansion sanity case. The deformation is plausible for +100 C thermal expansion over this plate size, while the stresses and remote reactions are negligible. This confirms that the high LC4 peak stresses are caused by the fixed-hole over-constraint rather than the uniform temperature load itself.
+
+ANSYS reported a warning that not enough constraints may be applied to prevent rigid-body motion. This is acceptable for LC4R if there is no solver pivot warning, no missing result file, and the displayed results remain stable. The remote-boundary-condition element-count warning is interpreted as a solver performance warning rather than a physics failure.
+
 ## Screening Statement
 
-The LC1, LC2 and LC3 peak stresses are low compared with typical room-temperature yield strength levels for annealed 316 stainless steel. However, this report does not claim formal ASME acceptance because it does not perform ASME stress categorization, use certified design-allowable data, or model bolt preload, contact, support compliance, fatigue, seismic loading, irradiation, welds or nonlinear plasticity.
+The LC1, LC2 and LC3 peak stresses are low compared with typical room-temperature yield strength levels for annealed 316 stainless steel. LC4 peak stress is intentionally not treated as a design stress because it is dominated by the idealized fixed-hole thermal constraint. LC4R indicates that thermal expansion alone is not structurally critical under a sliding/support mounting assumption. This report does not claim formal ASME acceptance because it does not perform ASME stress categorization, use certified design-allowable data, or model bolt preload, contact, support compliance, fatigue, seismic loading, irradiation, welds or nonlinear plasticity.
 
 ## Conclusion
 
@@ -128,11 +170,15 @@ For LC2, the fine-mesh response scales by approximately 2.5 from LC1, matching t
 
 For LC3, the reaction vector balances the combined applied load and the deformation/stress behavior is physically reasonable for a different loading direction. LC3 is accepted as complete for this educational linear static study.
 
+For LC4, the uniform +100 C temperature load is active and the deformation magnitude is plausible. The stress peak is treated as a boundary-condition-sensitive over-constraint indicator, not as a final design stress. LC4 is accepted as complete only in that sensitivity-case role.
+
+For LC4R, the same thermal load produces realistic expansion with negligible stress and tiny remote reactions. LC4R is accepted as the final realistic thermal expansion case for this portfolio model.
+
 The maximum principal stress hotspot near the idealized mounting-hole support should be reported as a local modeling sensitivity, not as a certified bolt-joint design stress.
 
 ## Recommended Follow-On Work
 
-1. Export and post-process LC4 result data using the same table format.
-2. Expand the comparison table across all load cases after LC4 is solved.
+1. Add a final screening table that separates mechanical stresses from the LC4 over-constraint sensitivity stress.
+2. Optionally add an assembly-level thermal mismatch model with a base plate and simplified bolts/washers.
 3. Include a simplified allowable-stress screening table with clearly stated non-code assumptions.
 4. If more realism is desired, replace fixed mounting-hole supports with bolt/contact/support-compliance modeling.

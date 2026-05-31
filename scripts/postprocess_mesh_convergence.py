@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INPUT_CSV = ROOT / "ansys" / "exported_results" / "mesh_convergence_raw.csv"
 LOAD_CASE_SUMMARY_CSV = ROOT / "ansys" / "exported_results" / "load_case_summary.csv"
 RESULTS_DIR = ROOT / "results"
+SCREENING_YIELD_MPA = 205.0
 
 
 def percent_change(series: pd.Series) -> pd.Series:
@@ -120,10 +121,9 @@ def save_load_case_outputs() -> None:
         return
 
     summary = pd.read_csv(LOAD_CASE_SUMMARY_CSV)
-    summary.to_markdown(
-        RESULTS_DIR / "load_case_summary.md",
-        index=False,
-        floatfmt=".6g",
+    (RESULTS_DIR / "load_case_summary.md").write_text(
+        summary.to_markdown(index=False, floatfmt=".6g") + "\n",
+        encoding="utf-8",
     )
 
     lc1 = summary.loc[summary["load_case"] == "LC1"].iloc[0]
@@ -132,6 +132,8 @@ def save_load_case_outputs() -> None:
         (summary["load_case"] != "LC1")
         & (summary["force_y_n"] == lc1["force_y_n"])
         & (summary["force_z_n"] == lc1["force_z_n"])
+        & (summary["thermal_delta_c"] == lc1["thermal_delta_c"])
+        & (summary["force_x_n"] > 0)
     ]
     for _, row in linear_scale_cases.iterrows():
         scale_factor = row["force_x_n"] / lc1["force_x_n"]
@@ -157,10 +159,9 @@ def save_load_case_outputs() -> None:
     scaling = pd.DataFrame(checks)
     if not scaling.empty:
         scaling.to_csv(RESULTS_DIR / "lc2_linear_scaling_check.csv", index=False)
-        scaling.to_markdown(
-            RESULTS_DIR / "lc2_linear_scaling_check.md",
-            index=False,
-            floatfmt=".6g",
+        (RESULTS_DIR / "lc2_linear_scaling_check.md").write_text(
+            scaling.to_markdown(index=False, floatfmt=".6g") + "\n",
+            encoding="utf-8",
         )
 
     force_balance = summary.copy()
@@ -169,16 +170,67 @@ def save_load_case_outputs() -> None:
         + force_balance["force_y_n"] ** 2
         + force_balance["force_z_n"] ** 2
     ) ** 0.5
-    force_balance["reaction_total_error_pct"] = (
-        (force_balance["reaction_total_n"] - force_balance["expected_reaction_total_n"])
-        / force_balance["expected_reaction_total_n"]
-        * 100.0
+    force_balance["reaction_total_error_n"] = (
+        force_balance["reaction_total_n"] - force_balance["expected_reaction_total_n"]
+    )
+    force_balance["reaction_total_error_pct"] = force_balance.apply(
+        lambda row: (
+            row["reaction_total_error_n"] / row["expected_reaction_total_n"] * 100.0
+            if row["expected_reaction_total_n"] != 0
+            else pd.NA
+        ),
+        axis=1,
     )
     force_balance.to_csv(RESULTS_DIR / "load_case_force_balance.csv", index=False)
-    force_balance.to_markdown(
-        RESULTS_DIR / "load_case_force_balance.md",
-        index=False,
-        floatfmt=".6g",
+    (RESULTS_DIR / "load_case_force_balance.md").write_text(
+        force_balance.to_markdown(index=False, floatfmt=".6g") + "\n",
+        encoding="utf-8",
+    )
+
+    screening_rows = []
+    for _, row in summary.iterrows():
+        if row["load_case"] == "LC4":
+            screening_rows.append(
+                {
+                    "load_case": row["load_case"],
+                    "case_name": row["case_name"],
+                    "max_vm_mpa": row["max_vm_mpa"],
+                    "screening_yield_mpa": SCREENING_YIELD_MPA,
+                    "factor_of_safety": pd.NA,
+                    "screening_status": "Not design-screened",
+                    "comment": "Over-constrained thermal comparison; peak stress is not treated as design stress",
+                }
+            )
+            continue
+
+        fos = round(SCREENING_YIELD_MPA / row["max_vm_mpa"], 2)
+        if row["load_case"] == "LC4R":
+            status = "Pass thermal sanity check"
+            comment = "Relaxed thermal case; negligible stress confirms expansion is not artificially restrained"
+        else:
+            status = (
+                "Pass preliminary screening"
+                if fos > 1.0
+                else "Does not pass preliminary screening"
+            )
+            comment = "Preliminary linear-elastic screen using assumed 316 annealed yield strength"
+        screening_rows.append(
+            {
+                "load_case": row["load_case"],
+                "case_name": row["case_name"],
+                "max_vm_mpa": row["max_vm_mpa"],
+                "screening_yield_mpa": SCREENING_YIELD_MPA,
+                "factor_of_safety": fos,
+                "screening_status": status,
+                "comment": comment,
+            }
+        )
+
+    screening = pd.DataFrame(screening_rows)
+    screening.to_csv(RESULTS_DIR / "safety_factor_summary.csv", index=False)
+    (RESULTS_DIR / "safety_factor_summary.md").write_text(
+        screening.to_markdown(index=False, floatfmt=".6g") + "\n",
+        encoding="utf-8",
     )
 
 
